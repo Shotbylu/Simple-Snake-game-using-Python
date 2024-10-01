@@ -1,0 +1,155 @@
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Colors
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
+
+# Screen dimensions
+WIDTH = 800
+HEIGHT = 600
+
+# Snake and food size
+BLOCK_SIZE = 20
+
+# Fonts
+FONT = pygame.font.SysFont(None, 36)
+
+class Snake:
+    def __init__(self):
+        self.body = [(WIDTH // 2, HEIGHT // 2)]
+        self.direction = (BLOCK_SIZE, 0)
+
+    def move(self):
+        head = (self.body[0][0] + self.direction[0], self.body[0][1] + self.direction[1])
+        self.body.insert(0, head)
+
+    def grow(self):
+        self.body.append(self.body[-1])
+
+    def check_collision(self):
+        head = self.body[0]
+        return (
+            head[0] < 0 or head[0] >= WIDTH or
+            head[1] < 0 or head[1] >= HEIGHT or
+            head in self.body[1:]
+        )
+
+class Game:
+    def __init__(self):
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Snake Game")
+        self.clock = pygame.time.Clock()
+        self.reset_game()
+
+    def reset_game(self):
+        self.snake = Snake()
+        self.food = self.generate_food()
+        self.score = 0
+        self.level = 1
+        self.speed = 10
+
+    def generate_food(self):
+        while True:
+            food = (random.randrange(0, WIDTH, BLOCK_SIZE),
+                    random.randrange(0, HEIGHT, BLOCK_SIZE))
+            if food not in self.snake.body:
+                return food
+
+    def draw(self):
+        self.screen.fill(BLACK)
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, GREEN, (*segment, BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(self.screen, RED, (*self.food, BLOCK_SIZE, BLOCK_SIZE))
+        score_text = FONT.render(f"Score: {self.score}", True, WHITE)
+        level_text = FONT.render(f"Level: {self.level}", True, WHITE)
+        self.screen.blit(score_text, (10, 10))
+        self.screen.blit(level_text, (WIDTH - 120, 10))
+        pygame.display.flip()
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != (0, BLOCK_SIZE):
+                    self.snake.direction = (0, -BLOCK_SIZE)
+                elif event.key == pygame.K_DOWN and self.snake.direction != (0, -BLOCK_SIZE):
+                    self.snake.direction = (0, BLOCK_SIZE)
+                elif event.key == pygame.K_LEFT and self.snake.direction != (BLOCK_SIZE, 0):
+                    self.snake.direction = (-BLOCK_SIZE, 0)
+                elif event.key == pygame.K_RIGHT and self.snake.direction != (-BLOCK_SIZE, 0):
+                    self.snake.direction = (BLOCK_SIZE, 0)
+
+    def update(self):
+        self.snake.move()
+        if self.snake.body[0] == self.food:
+            self.snake.grow()
+            self.food = self.generate_food()
+            self.score += 1
+            if self.score % 5 == 0:
+                self.level += 1
+                self.speed += 2
+
+        if self.snake.check_collision():
+            return False
+        return True
+
+    def show_start_screen(self):
+        self.screen.fill(BLACK)
+        title = FONT.render("Snake Game", True, WHITE)
+        start = FONT.render("Press SPACE to start", True, WHITE)
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 3))
+        self.screen.blit(start, (WIDTH // 2 - start.get_width() // 2, HEIGHT // 2))
+        pygame.display.flip()
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        waiting = False
+
+    def show_game_over(self):
+        self.screen.fill(BLACK)
+        game_over = FONT.render("Game Over", True, WHITE)
+        score = FONT.render(f"Final Score: {self.score}", True, WHITE)
+        restart = FONT.render("Press SPACE to restart", True, WHITE)
+        self.screen.blit(game_over, (WIDTH // 2 - game_over.get_width() // 2, HEIGHT // 3))
+        self.screen.blit(score, (WIDTH // 2 - score.get_width() // 2, HEIGHT // 2))
+        self.screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, 2 * HEIGHT // 3))
+        pygame.display.flip()
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_SPACE:
+                        waiting = False
+
+    def run(self):
+        self.show_start_screen()
+        while True:
+            self.reset_game()
+            running = True
+            while running:
+                self.clock.tick(self.speed)
+                self.handle_events()
+                running = self.update()
+                self.draw()
+            self.show_game_over()
+
+if __name__ == "__main__":
+    game = Game()
+    game.run()
