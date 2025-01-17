@@ -1,5 +1,7 @@
 # Snake Game
 
+![image](https://github.com/user-attachments/assets/f9e2e0dd-166b-4567-b7bc-de2b3d575c86)
+
 ## Overview
 This is a classic Snake game implemented in Python using the Pygame library. The game features a growing snake that moves around the screen, eating food to increase its length while avoiding collisions with itself and the screen boundaries.
 
